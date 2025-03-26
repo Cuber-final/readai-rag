@@ -1,0 +1,93 @@
+[tool.poetry]
+name = "readai"
+version = "0.1.0"
+description = "基于电子书的智能阅读助手后端服务"
+authors = ["Cuber-final"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.104.0"
+uvicorn = "^0.23.2"
+pydantic = "^2.4.2"
+pydantic-settings = "^2.0.3"
+python-dotenv = "^1.0.0"
+sqlalchemy = "^2.0.22"
+llama-index = "^0.9.11"
+transformers = "^4.34.1"
+ebooklib = "^0.18"
+html2text = "^2024.2.26"
+pypdf = "^3.16.2"
+alembic = "^1.12.1"
+httpx = "^0.25.0"
+python-multipart = "^0.0.6"
+
+
+
+[tool.poetry.extras]
+llms-openai-like = ["llama-index-llms-openai-like"]
+llms-ollama = ["llama-index-llms-ollama"]
+embeddings-ollama = ["llama-index-embeddings-ollama"]
+embeddings-huggingface = ["llama-index-embeddings-huggingface", "einops"]
+vector-stores-qdrant = ["llama-index-vector-stores-qdrant"]
+vector-stores-chroma = ["llama-index-vector-stores-chroma"]
+rerank-sentence-transformers = ["torch", "sentence-transformers"]
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.10.0"
+isort = "^5.12.0"
+mypy = "^1.6.1"
+ruff = "^0"
+pytest-cov = "^5"
+pytest = "^8.2"
+pytest-asyncio = "^0.24.0"
+notebook = "^7.3.3"
+numpy = "^2.2.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+## ruff
+[tool.ruff]
+target-version = 'py310'
+
+[tool.black]
+line-length = 88
+
+[tool.ruff.lint]
+# 选择启用的规则集合
+select = [
+    "E",    # pycodestyle 错误
+    "W",    # pycodestyle 警告
+    "F",    # Pyflakes
+    "B",    # flake8-bugbear
+    "I",    # isort
+    "D",    # pydocstyle
+    "UP",   # pyupgrade
+    "S",    # flake8-bandit
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "Q",    # flake8-quotes
+    "TCH",  # flake8-type-checking
+    "PT",   # flake8-pytest-style
+    "RUF",  # Ruff 特有规则
+]
+
+# 忽略特定规则
+ignore = [
+    "E501",   # 忽略行长度限制，由 Black 处理
+    "D100",   # 忽略缺少模块级别的 docstring
+    "D101",   # 忽略缺少类的 docstring
+    "D102",   # 忽略缺少方法的 docstring
+    "D103",   # 忽略缺少函数的 docstring
+    "D104",   # 忽略缺少包的 docstring
+    "D105",   # 忽略缺少魔术方法的 docstring
+    "D106",   # 忽略缺少嵌套类的 docstring
+    "D107",   # 忽略缺少 __init__ 方法的 docstring
+    "B008",   # 忽略函数调用作为默认参数的警告，适用于 FastAPI 的 Depends
+    "S101",   # 忽略使用 assert 的警告，测试代码中常用
+    "PT011",  # 忽略 pytest.raises() 应指定预期异常的警告
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
