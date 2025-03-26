@@ -20,6 +20,9 @@ pypdf = "^3.16.2"
 alembic = "^1.12.1"
 httpx = "^0.25.0"
 python-multipart = "^0.0.6"
+llama-index-llms-deepseek = "^0.1.1"
+loguru = "^0.7.3"
+llama-index-llms-vllm = "^0.5.0"
 
 
 
@@ -31,6 +34,7 @@ embeddings-huggingface = ["llama-index-embeddings-huggingface", "einops"]
 vector-stores-qdrant = ["llama-index-vector-stores-qdrant"]
 vector-stores-chroma = ["llama-index-vector-stores-chroma"]
 rerank-sentence-transformers = ["torch", "sentence-transformers"]
+
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.10.0"
@@ -87,6 +91,7 @@ ignore = [
     "B008",   # 忽略函数调用作为默认参数的警告，适用于 FastAPI 的 Depends
     "S101",   # 忽略使用 assert 的警告，测试代码中常用
     "PT011",  # 忽略 pytest.raises() 应指定预期异常的警告
+    "D415"
 ]
 
 [tool.ruff.lint.pydocstyle]

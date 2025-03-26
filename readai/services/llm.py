@@ -1,122 +1,80 @@
-from typing import Generator, Dict, Any, List, Optional
 import logging
-import json
 
-from llama_index.llms.ollama import Ollama
-from llama_index.core.llms import ChatMessage, MessageRole
+from injector import singleton
+from llama_index.core.llms import LLM, MockLLM
 
-from readai.core.config import settings
-from readai.core.exceptions import LLMException
+from readai.core.schema import LLMmode
 
 logger = logging.getLogger(__name__)
 
 
-class LLMService:
-    """LLM服务类"""
-    
-    def __init__(self):
-        self.llm = self._get_llm()
-        
-    def _get_llm(self) -> Ollama:
-        """获取LLM模型"""
-        try:
-            logger.info(f"初始化LLM模型: {settings.LLM_MODEL_NAME}")
-            return Ollama(
-                model=settings.LLM_MODEL_NAME,
-                base_url=settings.OLLAMA_BASE_URL,
-                request_timeout=120.0,
-                temperature=0.7,
-                top_p=0.95,
-                context_window=8192,
-            )
-        except Exception as e:
-            logger.error(f"初始化LLM模型失败: {str(e)}")
-            raise LLMException(f"初始化LLM模型失败: {str(e)}")
-    
-    def chat_completion_stream(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0.7,
-        model_name: Optional[str] = None
-    ) -> Generator[str, None, None]:
-        """流式聊天完成"""
-        try:
-            # 如果指定了模型名称，则使用指定模型
-            llm = self.llm
-            if model_name and model_name != settings.LLM_MODEL_NAME:
-                logger.info(f"使用指定模型: {model_name}")
-                llm = Ollama(
-                    model=model_name,
-                    base_url=settings.OLLAMA_BASE_URL,
-                    request_timeout=120.0,
-                    temperature=temperature,
-                    top_p=0.95,
-                    context_window=8192,
-                )
-            
-            # 转换消息格式
-            chat_messages = []
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-                if role == "user":
-                    chat_messages.append(ChatMessage(role=MessageRole.USER, content=content))
-                elif role == "assistant":
-                    chat_messages.append(ChatMessage(role=MessageRole.ASSISTANT, content=content))
-                elif role == "system":
-                    chat_messages.append(ChatMessage(role=MessageRole.SYSTEM, content=content))
-            
-            # 流式生成响应
-            response_iter = llm.stream_chat(chat_messages, temperature=temperature)
-            
-            for response in response_iter:
-                yield response.delta
-                
-        except Exception as e:
-            logger.error(f"生成回答失败: {str(e)}")
-            yield f"生成回答失败: {str(e)}"
-    
-    def chat_completion(
-        self,
-        messages: List[Dict[str, str]],
-        temperature: float = 0.7,
-        model_name: Optional[str] = None
-    ) -> str:
-        """非流式聊天完成"""
-        try:
-            # 如果指定了模型名称，则使用指定模型
-            llm = self.llm
-            if model_name and model_name != settings.LLM_MODEL_NAME:
-                logger.info(f"使用指定模型: {model_name}")
-                llm = Ollama(
-                    model=model_name,
-                    base_url=settings.OLLAMA_BASE_URL,
-                    request_timeout=120.0,
-                    temperature=temperature,
-                    top_p=0.95,
-                    context_window=8192,
-                )
-            
-            # 转换消息格式
-            chat_messages = []
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-                if role == "user":
-                    chat_messages.append(ChatMessage(role=MessageRole.USER, content=content))
-                elif role == "assistant":
-                    chat_messages.append(ChatMessage(role=MessageRole.ASSISTANT, content=content))
-                elif role == "system":
-                    chat_messages.append(ChatMessage(role=MessageRole.SYSTEM, content=content))
-            
-            # 生成响应
-            response = llm.chat(chat_messages, temperature=temperature)
-            return response.message.content
-            
-        except Exception as e:
-            logger.error(f"生成回答失败: {str(e)}")
-            raise LLMException(f"生成回答失败: {str(e)}")
+@singleton
+class LLMComponent:
+    llm: LLM
 
+    # TODO 通过依赖注入配置信息 Settings
+    def __init__(self, llm_mode: LLMmode) -> None:
+        match llm_mode:
+            case LLMmode.DEEPSEEK:
+                from llama_index.llms.deepseek import DeepSeek  # type: ignore
 
-# 创建全局LLM服务实例
-llm_service = LLMService() 
+                self.llm = DeepSeek(
+                    model="deepseek-chat",
+                    api_key="sk-1234567890",
+                )
+
+            case LLMmode.OPENAI:
+                from llama_index.llms.openai import OpenAI  # type: ignore
+
+                # openai_settings = settings.openai
+                self.llm = OpenAI(
+                    api_base="https://api.openai.com/v1",
+                    api_key="sk-1234567890",
+                    model="gpt-3.5-turbo",
+                )
+            case LLMmode.OPENAI_LIKE:
+                try:
+                    from llama_index.llms.openai_like import OpenAILike  # type: ignore
+                except ImportError as e:
+                    raise ImportError(
+                        "OpenAILike dependencies not found, install with `poetry install --extras llms-openai-like`"
+                    ) from e
+
+                # openai_settings = settings.openai
+                self.llm = OpenAILike(
+                    api_base="https://api.openai.com/v1",
+                    api_key="sk-1234567890",
+                    model="gpt-3.5-turbo",
+                )
+            case LLMmode.OLLAMA:
+                from llama_index.llms.ollama import Ollama  # type: ignore
+
+                # calculate llm model. If not provided tag, it will be use latest
+                # model_name = (
+                #     ollama_settings.llm_model + ":latest"
+                #     if ":" not in ollama_settings.llm_model
+                #     else ollama_settings.llm_model
+                # )
+
+                llm = Ollama(
+                    model="llama3.1",
+                    base_url="http://localhost:11434",
+                    temperature=0.5,
+                    context_window=1024,
+                    additional_kwargs={},
+                    request_timeout=60,
+                )
+
+                # if ollama_settings.autopull_models:
+                #     from private_gpt.utils.ollama import check_connection, pull_model
+
+                #     if not check_connection(llm.client):
+                #         raise ValueError(
+                #             f"Failed to connect to Ollama, "
+                #             f"check if Ollama server is running on {ollama_settings.api_base}"
+                #         )
+                #     pull_model(llm.client, model_name)
+                self.llm = llm
+
+            case LLMmode.MOCK_LLM:
+                self.llm = MockLLM()
