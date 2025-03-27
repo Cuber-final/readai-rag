@@ -3,7 +3,7 @@ import logging
 from injector import singleton
 from llama_index.core.llms import LLM, MockLLM
 
-from readai.core.schema import LLMmode
+from readai.core.schemas import LLMmode
 
 logger = logging.getLogger(__name__)
 

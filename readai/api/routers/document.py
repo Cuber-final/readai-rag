@@ -14,14 +14,14 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
+from readai.components.document_loader import document_loader
 from readai.core.config import settings
-from readai.core.schema import (
+from readai.core.schemas import (
     BookUploadResponse,
     HttpStatus,
 )
 from readai.db.models import BookMetadata, ChatStatus, get_file_type
 from readai.db.session import get_db
-from readai.services.document_loader import document_loader
 from readai.services.rag_engine import rag_engine
 
 router = APIRouter()

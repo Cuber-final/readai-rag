@@ -27,77 +27,6 @@
 - [Poetry](https://python-poetry.org/docs/#installation) 包管理工具
 - [Ollama](https://ollama.com/download) 本地LLM框架
 
-### 安装
-
-1. 克隆仓库
-
-```bash
-git clone https://github.com/yourusername/readai-backend.git
-cd readai-backend
-```
-
-2. 使用 Poetry 安装依赖
-
-```bash
-poetry install
-```
-
-3. 创建 `.env` 文件 (可复制 `.env.example` 并修改配置)
-
-```bash
-cp .env.example .env
-```
-
-4. 修改 `.env` 文件中的配置项，尤其是 Ollama 模型配置和数据存储路径
-
-### 运行
-
-1. 确保 Ollama 服务已启动并且已拉取所需模型
-
-```bash
-# 下载模型（以 deepseek-coder 为例）
-ollama pull deepseek-coder:7b
-```
-
-2. 初始化数据库
-
-```bash
-poetry run python scripts/init_db.py
-```
-
-3. 启动应用
-
-```bash
-poetry run uvicorn app.main:app --reload
-```
-
-4. 访问文档以测试 API
-
-打开浏览器访问 http://localhost:8000/docs
-
-## 🧪 测试 RAG 功能
-
-可以使用测试脚本快速测试 RAG 功能：
-
-```bash
-poetry run python scripts/test_rag.py /path/to/your/document.pdf "你的测试问题"
-```
-
-## 📚 API 文档
-
-启动服务后，访问以下地址查看 API 文档:
-
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-### 主要 API 端点
-
-- `POST /api/documents/upload`: 上传 PDF 或 EPUB 电子书
-- `POST /api/documents/process`: 处理文档生成向量索引
-- `GET /api/documents/books`: 获取所有上传的书籍
-- `POST /api/chat/chat`: 与书籍进行对话 (支持流式输出)
-- `GET /api/chat/history/{book_id}`: 获取与书籍的聊天历史
-- `DELETE /api/chat/history/{book_id}`: 清空与书籍的聊天历史
 
 ## 🧠 技术栈一览
 
@@ -111,22 +40,8 @@ poetry run python scripts/test_rag.py /path/to/your/document.pdf "你的测试�
 | 数据库 | SQLite |
 | Embedding模型 | BAAI/bge-large-zh-v1.5 |
 
-## 💻 开发指南
-
-### 项目结构
-
-```
-readai-backend/
-├── app/                    # 主应用代码
-│   ├── api/                # API端点
-│   │   └── endpoints/      # API实现
-│   ├── core/               # 核心配置和工具
-│   ├── db/                 # 数据库模型和会话
-│   └── services/           # 业务服务
-├── data/                   # 数据存储目录
-├── scripts/                # 实用脚本
-└── tests/                  # 测试代码
-```
+## 💻 开发计划
+ - [ ] 统一的模型接口层LLM
 
 ### 自定义配置
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from readai.api.endpoints import chat, document
+from readai.api.routers import chat, document
 
 # 创建主路由
 api_router = APIRouter()

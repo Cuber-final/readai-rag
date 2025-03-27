@@ -70,4 +70,4 @@ class ChatMessage(Base):
     created_at = Column(DateTime, default=datetime.now)
 
     # 关系
-    book = relationship("Book", back_populates="messages")
+    book = relationship("BookMetadata", back_populates="messages")

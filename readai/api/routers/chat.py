@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from readai.core.schema import ChatRequest, HttpStatus
+from readai.core.schemas import ChatRequest, HttpStatus
 from readai.db.models import BookMetadata, ChatMessage
 from readai.db.session import get_db
 from readai.services.rag_engine import rag_engine
