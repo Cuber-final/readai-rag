@@ -39,6 +39,9 @@ llama-index-llms-ollama = {version = "*",optional = true}
 
 # Optional Reranker dependencies
 sentence-transformers = {version ="*", optional = true}
+langchain-community = "^0.3.20"
+unstructured = "^0.17.2"
+pypandoc = "^1.15"
 
 [tool.poetry.extras]
 llms-openai-like = ["llama-index-llms-openai-like"]
