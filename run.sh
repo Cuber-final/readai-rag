@@ -1,17 +1,13 @@
  #!/bin/bash
 
-# 确保Python环境存在
-if command -v poetry &> /dev/null
-then
-    echo "Poetry 已安装，开始启动应用..."
-else
-    echo "需要先安装 Poetry 包管理工具"
-    echo "请访问: https://python-poetry.org/docs/#installation"
-    exit 1
-fi
+# 创建适配版本的虚拟环境
+pyenv virtualenv 3.10.16 read_backend
 
-# 安装依赖
-echo "安装项目依赖..."
+# 激活虚拟环境
+pyenv activate read_backend
+
+# 通过poetry安装依赖
+poetry env use $(pyenv which python3)
 poetry install
 
 # 确保数据库初始化

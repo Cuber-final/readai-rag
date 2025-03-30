@@ -25,20 +25,20 @@ injector = "^0.22.0"
 torch = "^2.4.1"
 
 # LlamaIndex libs
-llama-index = "^0.9.11"
-llama-index-llms-deepseek = "^0.1.1"
+llama-index = ">=0.10.44,<0.12.26"
+llama-index-core = "^0.12.25"
 llama-index-embeddings-ollama = "^0.6.0"
+llama-index-llms-deepseek = "^0.1.1"
 llama-index-vector-stores-qdrant = "^0.6.0"
 qdrant-client = "^1.13.3"
+mlflow = ">=2.15"
 
 # Optional LlamaIndex integration libs
-llama-index-llms-openai-like = {version = "^0.3.4",optional = true}
-llama-index-llms-ollama = {version = "^0.5.4",optional = true}
-llama-index-readers-file = "^0.4.7"
+llama-index-llms-openai-like = {version = "*",optional = true}
+llama-index-llms-ollama = {version = "*",optional = true}
 
 # Optional Reranker dependencies
-sentence-transformers = {version ="^3.1.1", optional = true}
-
+sentence-transformers = {version ="*", optional = true}
 
 [tool.poetry.extras]
 llms-openai-like = ["llama-index-llms-openai-like"]

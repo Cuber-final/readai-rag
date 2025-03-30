@@ -1,13 +1,14 @@
 import os
+import time
 from pathlib import Path
 
-from llama_index.core import (
-    Settings,
-    SimpleDirectoryReader,
-    StorageContext,
-    VectorStoreIndex,
-)
+import mlflow
+from llama_index.core.base.llms.types import ChatMessage
+from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.settings import Settings
+from llama_index.core.storage import StorageContext
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.llms.deepseek import DeepSeek
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -24,6 +25,17 @@ logger.add(log_path, level="INFO", encoding="utf-8")
 # 设置环境变量
 api_key = os.getenv("DEEPSEEK_API_KEY")
 model_name = os.getenv("DEEPSEEK_MODEL")
+
+# 设置MLflow
+try:
+    mlflow.set_tracking_uri("http://localhost:5001")
+    # 检查连接
+    mlflow.get_tracking_uri()
+    mlflow.set_experiment("LlamaIndex-RAG")
+    mlflow.llama_index.autolog()
+    logger.info("成功连接到MLflow服务器")
+except Exception as e:
+    logger.error(f"MLflow初始化错误: {e}")
 
 
 class RAGTest:
@@ -70,39 +82,38 @@ class RAGTest:
                     vector_store=self.vector_store, storage_context=self.storage_context
                 )
             else:
+                start_time = time.time()
                 self.index = VectorStoreIndex.from_documents(
                     documents, storage_context=self.storage_context
                 )
-                logger.info("索引创建成功并已插入文档。")
+                build_time = time.time() - start_time
+                logger.info(f"索引创建成功并已插入文档，耗时: {build_time:.2f}秒")
         except UnexpectedResponse as e:
             logger.error(f"检查集合时发生错误: {e}")
             raise
 
-    def chat(self, query, history=None):
+    def chat(self, query, chat_history=None):
         """进行对话"""
         try:
             # 创建聊天引擎
-
             from llama_index.core.memory import ChatMemoryBuffer
 
             memory = ChatMemoryBuffer.from_defaults(token_limit=2000)
-            if history:
-                for msg in history:
-                    memory.put(msg)
+            if chat_history:
+                for msg in chat_history:
+                    # 将字典转换为ChatMessage对象
+                    chat_msg = ChatMessage(role=msg["role"], content=msg["content"])
+                    memory.put(chat_msg)
 
+            # 记录查询开始时间
             chat_engine = self.index.as_chat_engine(
                 chat_mode="context", memory=memory, verbose=True, temperature=1.3
             )
 
-            # 获取响应
-            # streaming_response = chat_engine.stream_chat(query)
-            # for token in streaming_response.response_gen:
-            #     print(token, end="")
             # 非流式响应
             response = chat_engine.chat(query)
-            print(response)
-            # 将模型输出打到日志中
-            logger.info(f"模型输出: {response}")
+            return response
+
         except Exception as e:
             logger.error(f"对话失败: {e}")
             raise
@@ -126,17 +137,18 @@ def main():
     # 创建 RAG 测试实例
     rag_test = RAGTest()
 
-    rag_test.load_or_create_index(documents)
-    # 创建索引并插入文档
-
-    # 进行交互式对话
-    history = []
-
-    query = input("\nquestion : ")
-    try:
-        rag_test.chat(query, history)
-    except Exception as e:
-        print(f"发生错误: {e}")
+    with mlflow.start_run(run_name="RAG-Test"):
+        rag_test.load_or_create_index(documents)
+        # 进行交互式对话
+        history = []
+        query = "你是谁？"
+        # 单次询问
+        try:
+            response = rag_test.chat(query, history)
+            # 更新对话历史
+            print(response)
+        except Exception as e:
+            print(f"发生错误: {e}")
 
 
 if __name__ == "__main__":
