@@ -2,3 +2,5 @@
 **/logs/*
 **/mlruns/*
 **/mlartifacts/*
+**/__pycache__/*
+**/venv/
