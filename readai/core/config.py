@@ -63,3 +63,5 @@ def ensure_directories():
 
 # 程序启动时确保目录存在
 ensure_directories()
+
+# 后期可以采取读取yaml配置文件来获取设置项

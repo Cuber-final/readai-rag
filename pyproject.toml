@@ -5,7 +5,7 @@ description = "基于电子书的智能阅读助手后端服务"
 authors = ["Cuber-final"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.13"
 fastapi = "^0.104.0"
 uvicorn = "^0.23.2"
 pydantic = "^2.4.2"
@@ -42,6 +42,8 @@ sentence-transformers = {version ="*", optional = true}
 langchain-community = "^0.3.20"
 unstructured = "^0.17.2"
 pypandoc = "^1.15"
+markitdown = {extras = ["pdf"], version = "^0.1.1"}
+spacy = "^3.8.5"
 
 [tool.poetry.extras]
 llms-openai-like = ["llama-index-llms-openai-like"]

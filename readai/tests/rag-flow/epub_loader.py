@@ -68,11 +68,37 @@ def convert_to_markdown(input_file: str, output_path: str):
     print(f"文件已成功转换并保存至 {output_path}")
 
 
-if __name__ == "__main__":
-    # 测试
-    book_path = "../data/非暴力沟通.epub"
-    convert_to_markdown(book_path, "../data/comunication_pre.md")
+def preprocess_book(book_path: str, output_path: str) -> dict:
+    """预处理epub文件，转换为markdown文件，并清洗数据。
+
+    参数:
+    book_path (str): 输入epub文件的路径。
+    output_path (str): 输出Markdown文件的路径。
+    """
+    # 根据book_path中的文件名提取文件类型，追加到metadata
+    file_type = book_path.split(".")[-1]
+    try:
+        convert_to_markdown(book_path, output_path)
+    except Exception as e:
+        print(f"转换失败: {e}")
+        return {}
     metadata = process_markdown_file(
-        "../data/comunication_pre.md",
-        "../data/comunication_cleaned.md",
+        output_path,
+        output_path.replace(".md", "_cleaned.md"),
     )
+    metadata["filetype"] = file_type
+    return metadata
+
+
+if __name__ == "__main__":
+    # 获取当前文件所在路径的上级目录
+    current_dir = Path(__file__).parent.parent
+    print(current_dir)
+    book_path = current_dir / "data/非暴力沟通.epub"
+    convert_to_markdown(book_path, current_dir / "data/comunication_pre.md")
+    metadata = process_markdown_file(
+        current_dir / "data/comunication_pre.md",
+        current_dir / "data/comunication_cleaned.md",
+    )
+    print("书籍元信息:")
+    print(metadata)
