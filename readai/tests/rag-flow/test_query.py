@@ -21,6 +21,8 @@ log_path = Path("logs/test_embedding.log")
 log_path.parent.mkdir(parents=True, exist_ok=True)
 logger.add(log_path, level="INFO", encoding="utf-8")
 
+project_root = Path(os.getenv("PROJECT_ROOT"))
+data_path = project_root / "data"
 
 # 设置环境变量
 api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -125,7 +127,7 @@ class RAGTest:
 
 
 def main():
-    book_dir = "/Users/pegasus/workplace/mygits/readest-ai/readai-backend/data/books"
+    book_dir = data_path / "books"
 
     # 加载指定文件夹下的文档
     documents = SimpleDirectoryReader(

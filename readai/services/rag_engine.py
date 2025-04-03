@@ -7,9 +7,9 @@ from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.schema import NodeWithScore
 
-from readai.components.document_loader import document_loader
 from readai.components.embedding import embedding_service
 from readai.components.llm import llm_service
+from readai.components.loaders import document_loader
 from readai.core.exceptions import BookNotProcessedException, VectorStoreException
 from readai.db.models import Book
 from readai.services.vector_store import vector_store_service

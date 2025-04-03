@@ -14,7 +14,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from readai.components.document_loader import document_loader
+from readai.components.loaders import document_loader
 from readai.core.config import settings
 from readai.core.schemas import (
     BookUploadResponse,

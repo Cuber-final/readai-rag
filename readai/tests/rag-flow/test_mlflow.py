@@ -10,6 +10,8 @@ from llama_index.core.node_parser import (
     get_leaf_nodes,
     get_root_nodes,
 )
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import AutoMergingRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.storage import StorageContext
 from llama_index.core.storage.docstore import SimpleDocumentStore
@@ -19,7 +21,7 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from loguru import logger
 from qdrant_client import QdrantClient
 
-from readai.components.custom.text_splitters.chinese_text_splitter import (
+from readai.components.text_splitters.chinese_text_splitter import (
     ChineseRecursiveTextSplitter,
 )
 
@@ -47,11 +49,10 @@ Settings.embed_model = OllamaEmbedding(
 )
 
 # 第一步：使用 UnstructuredEPubLoader 加载 EPUB 文档
-test_data_path = Path(
-    "/Users/pegasus/workplace/mygits/readest-ai/readai-backend/readai/tests/data"
-)
+project_root = Path(os.getenv("PROJECT_ROOT"))
+data_path = project_root / "data"
 book_name = "非暴力沟通.epub"
-book_path = test_data_path / book_name
+book_path = data_path / "books" / book_name
 loader = UnstructuredEPubLoader(book_path, mode="elements", strategy="hi_res")
 documents = loader.load()
 
@@ -94,15 +95,11 @@ base_index = VectorStoreIndex(nodes=leaf_nodes, storage_context=storage_context)
 # 创建基础检索器
 base_retriever = base_index.as_retriever(similarity_top_k=6)
 
-# 创建AutoMergingRetriever
-from llama_index.core.retrievers import AutoMergingRetriever
 
 retriever = AutoMergingRetriever(
     base_retriever, storage_context, verbose=True, simple_ratio_thresh=0.6
 )
 
-# 创建查询引擎
-from llama_index.core.query_engine import RetrieverQueryEngine
 
 query_engine = RetrieverQueryEngine.from_args(retriever)
 
