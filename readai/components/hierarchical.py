@@ -10,7 +10,7 @@ from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
 from llama_index.core.utils import get_tqdm_iterable
 
-from readai.components.text_splitters.splitters import SentenceSplitter
+from readai.components.text_splitters.sentence_splitters import SentenceSplitter
 
 
 def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) -> None:

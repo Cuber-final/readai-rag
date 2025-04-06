@@ -21,6 +21,7 @@ from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
 
 # LLamaIndex 相关导入
 from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex
@@ -32,15 +33,16 @@ from llama_index.core.evaluation import (
 from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.core.retrievers import BaseRetriever, VectorIndexRetriever
 from llama_index.embeddings.ollama import OllamaEmbedding
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.deepseek import DeepSeek
 from llama_index.postprocessor.cohere_rerank import CohereRerank
 from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from loguru import logger
 from tqdm import tqdm
 
+from readai.components.epub2md_loader import preprocess_book
+
 # 本地组件导入
-from readai.components.loaders import MarkdownReader
 from readai.components.prompts import QA_GENERATE_PROMPT_TMPL_ZH
 
 # 加载环境变量
@@ -62,7 +64,7 @@ class ContextualRetrieverExperiment:
     def __init__(
         self,
         book_path=None,
-        llm_model="gpt-3.5-turbo",
+        llm_model="deepseek-chat",
         embed_model_name="quentinz/bge-large-zh-v1.5",
         similarity_top_k=5,
     ):
@@ -78,7 +80,11 @@ class ContextualRetrieverExperiment:
         self.similarity_top_k = similarity_top_k
 
         # 设置LLM模型
-        self.llm = OpenAI(model=llm_model)
+        self.llm = DeepSeek(
+            model=llm_model,
+            api_key=os.environ.get("DEEPSEEK_API_KEY"),
+            api_base="https://api.deepseek.com",
+        )
 
         # 设置嵌入模型
         self.embed_model = OllamaEmbedding(
@@ -120,33 +126,27 @@ class ContextualRetrieverExperiment:
         """加载文档数据"""
         if self.book_path is None:
             # 默认使用测试数据
-            self.book_path = data_path / "comunication_cleaned.md"
+            self.book_path = data_path / "renzhi.epub"
 
         logger.info(f"加载文档: {self.book_path}")
 
-        # 根据文件类型选择不同的加载器
-        if str(self.book_path).endswith(".md"):
-            reader = MarkdownReader()
-            self.documents = reader.load_data(self.book_path)
-        else:
-            from langchain_community.document_loaders import UnstructuredMarkdownLoader
-
-            loader = UnstructuredMarkdownLoader(self.book_path, mode="elements")
-            raw_docs = loader.load()
-            # 转换为LlamaIndex文档格式
-            self.documents = [
-                Document(
-                    text=doc.page_content,
-                    metadata={
-                        "category": doc.metadata.get("category", ""),
-                        "filename": doc.metadata.get("filename", ""),
-                    },
-                    metadata_seperator="::",
-                    metadata_template="{key}=>{value}",
-                    text_template="Metadata: {metadata_str}\n-----\nContent: {content}",
-                )
-                for doc in raw_docs
-            ]
+        metadata, cleaned_path = preprocess_book(str(self.book_path))
+        loader = UnstructuredMarkdownLoader(cleaned_path, mode="elements")
+        raw_docs = loader.load()
+        # 处理为llama_index documents
+        self.documents = [
+            Document(
+                text=doc.page_content,
+                metadata={
+                    "category": doc.metadata.get("category", ""),
+                    "filename": doc.metadata.get("filename", ""),
+                },
+                metadata_seperator="::",
+                metadata_template="{key}=>{value}",
+                text_template="Metadata: {metadata_str}\n-----\nContent: {content}",
+            )
+            for doc in raw_docs
+        ]
 
         logger.info(f"加载了 {len(self.documents)} 个文档")
         return self.documents
@@ -480,29 +480,16 @@ class HybridRetriever(BaseRetriever):
 
 
 def main():
-    """主函数"""
     experiment = ContextualRetrieverExperiment()
-
-    # 加载数据
     experiment.load_data()
-
-    # 创建基础节点
     experiment.create_nodes()
-
-    # 创建上下文增强节点（可选）
-    # 注：这一步可能比较耗时，如果只想测试基础检索器，可以注释掉
     experiment.create_contextual_nodes()
-
-    # 创建索引和检索器
     experiment.create_indices_and_retrievers()
 
-    # 简单测试
     test_query = "非暴力沟通的四个要素是什么？"
     experiment.test_retrieval(test_query)
 
-    # 创建评估数据集（可选）
     # experiment.create_evaluation_dataset()
-
     # 评估检索器性能（异步操作）
     # import asyncio
     # results_df = asyncio.run(experiment.evaluate_retrievers())

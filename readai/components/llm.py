@@ -49,13 +49,6 @@ class LLMComponent:
             case LLMmode.OLLAMA:
                 from llama_index.llms.ollama import Ollama  # type: ignore
 
-                # calculate llm model. If not provided tag, it will be use latest
-                # model_name = (
-                #     ollama_settings.llm_model + ":latest"
-                #     if ":" not in ollama_settings.llm_model
-                #     else ollama_settings.llm_model
-                # )
-
                 llm = Ollama(
                     model="llama3.1",
                     base_url="http://localhost:11434",
@@ -65,15 +58,6 @@ class LLMComponent:
                     request_timeout=60,
                 )
 
-                # if ollama_settings.autopull_models:
-                #     from private_gpt.utils.ollama import check_connection, pull_model
-
-                #     if not check_connection(llm.client):
-                #         raise ValueError(
-                #             f"Failed to connect to Ollama, "
-                #             f"check if Ollama server is running on {ollama_settings.api_base}"
-                #         )
-                #     pull_model(llm.client, model_name)
                 self.llm = llm
 
             case LLMmode.MOCK_LLM:
