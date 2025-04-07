@@ -27,7 +27,6 @@ class CustomFilePathExtractor(BaseExtractor):
         else:
             pathmap = None
         imgmap_file = os.path.join(self.data_path, "imgmap_filtered.json")
-        print(imgmap_file, flush=True)
         if os.path.exists(imgmap_file):
             with open(imgmap_file) as f:
                 imgmap = json.loads(f.read())
@@ -41,19 +40,18 @@ class CustomFilePathExtractor(BaseExtractor):
             node.metadata["file_path"] = file_path
             if pathmap is not None:
                 node.metadata["know_path"] = "/".join(pathmap[file_path])
-            if imgmap is not None:
-                if file_path in imgmap:
-                    cap2imgobj = imgmap[file_path]
-                    imgobjs = []
-                    for cap in cap2imgobj:
-                        imgobj = cap2imgobj[cap]
-                        title = imgobj["title"]
-                        content = imgobj["content"]
-                        if filter_image(cap, title, node.text, content):
-                            continue
-                        imgobj["cap"] = cap
-                        imgobjs.append(imgobj)
-                    node.metadata["imgobjs"] = imgobjs
+            if imgmap is not None and file_path in imgmap:
+                cap2imgobj = imgmap[file_path]
+                imgobjs = []
+                for cap in cap2imgobj:
+                    imgobj = cap2imgobj[cap]
+                    title = imgobj["title"]
+                    content = imgobj["content"]
+                    if filter_image(cap, title, node.text, content):
+                        continue
+                    imgobj["cap"] = cap
+                    imgobjs.append(imgobj)
+                node.metadata["imgobjs"] = imgobjs
             metadata_list.append(node.metadata)
         return metadata_list
 

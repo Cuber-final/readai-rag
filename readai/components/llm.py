@@ -3,6 +3,7 @@ import logging
 from injector import singleton
 from llama_index.core.llms import LLM, MockLLM
 
+from readai.core.config import settings
 from readai.core.schemas import LLMmode
 
 logger = logging.getLogger(__name__)
@@ -12,15 +13,14 @@ logger = logging.getLogger(__name__)
 class LLMComponent:
     llm: LLM
 
-    # TODO 通过依赖注入配置信息 Settings
     def __init__(self, llm_mode: LLMmode) -> None:
         match llm_mode:
             case LLMmode.DEEPSEEK:
                 from llama_index.llms.deepseek import DeepSeek  # type: ignore
 
                 self.llm = DeepSeek(
-                    model="deepseek-chat",
-                    api_key="sk-1234567890",
+                    model=settings.DEEPSEEK_MODEL_NAME,
+                    api_key=settings.DEEPSEEK_API_KEY,
                 )
 
             case LLMmode.OPENAI:
@@ -29,8 +29,8 @@ class LLMComponent:
                 # openai_settings = settings.openai
                 self.llm = OpenAI(
                     api_base="https://api.openai.com/v1",
-                    api_key="sk-1234567890",
-                    model="gpt-3.5-turbo",
+                    api_key=settings.OPENAI_API_KEY,
+                    model=settings.OPENAI_MODEL_NAME,
                 )
             case LLMmode.OPENAI_LIKE:
                 try:
@@ -43,22 +43,9 @@ class LLMComponent:
                 # openai_settings = settings.openai
                 self.llm = OpenAILike(
                     api_base="https://api.openai.com/v1",
-                    api_key="sk-1234567890",
-                    model="gpt-3.5-turbo",
+                    api_key=settings.OPENAI_API_KEY,
+                    model=settings.OPENAI_MODEL_NAME,
                 )
-            case LLMmode.OLLAMA:
-                from llama_index.llms.ollama import Ollama  # type: ignore
-
-                llm = Ollama(
-                    model="llama3.1",
-                    base_url="http://localhost:11434",
-                    temperature=0.5,
-                    context_window=1024,
-                    additional_kwargs={},
-                    request_timeout=60,
-                )
-
-                self.llm = llm
 
             case LLMmode.MOCK_LLM:
                 self.llm = MockLLM()

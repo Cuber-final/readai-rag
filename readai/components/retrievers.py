@@ -2,18 +2,20 @@ from collections.abc import Callable
 from typing import Any, cast
 
 import bm25s
-from llama_index.core import NodeWithScore, QueryBundle, VectorStoreIndex
-from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core import QueryBundle, VectorStoreIndex
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.postprocessor import SentenceTransformerRerank
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore
 from llama_index.core.storage.docstore import BaseDocumentStore
+from llama_index.core.vector_stores import VectorStoreQuery
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from loguru import logger
 from rank_bm25 import BM25Okapi
 
-from ..pipeline.ingestion import get_node_content
+from readai.core.pipeline.ingestion import get_node_content
 
 
 class SentenceWindowRetriever(BaseRetriever):
@@ -344,12 +346,70 @@ class EnhancedSentenceRetriever(BaseRetriever):
         return sorted(merged, key=lambda x: x.score, reverse=True)
 
 
-# 基于BM25算法的关键词检索器
+class QdrantRetriever(BaseRetriever):
+    def __init__(
+        self,
+        vector_store: QdrantVectorStore,
+        embed_model: BaseEmbedding,
+        similarity_top_k: int = 2,
+        filters=None,
+    ) -> None:
+        self._vector_store = vector_store
+        self._embed_model = embed_model
+        self._similarity_top_k = similarity_top_k
+        self.filters = filters
+        super().__init__()
+
+    async def _aretrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+        query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
+        vector_store_query = VectorStoreQuery(
+            query_embedding,
+            similarity_top_k=self._similarity_top_k,
+            # filters=self.filters, # qdrant 使用llama_index filter会有问题，原因未知
+        )
+        query_result = await self._vector_store.aquery(
+            vector_store_query,
+            qdrant_filters=self.filters,  # 需要查找qdrant相关用法
+        )
+
+        node_with_scores = []
+        for node, similarity in zip(
+            query_result.nodes, query_result.similarities, strict=False
+        ):
+            node_with_scores.append(NodeWithScore(node=node, score=similarity))
+        return node_with_scores
+
+    def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
+        query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
+        vector_store_query = VectorStoreQuery(
+            query_embedding,
+            similarity_top_k=self._similarity_top_k,
+        )
+        query_result = self._vector_store.query(
+            vector_store_query,
+            qdrant_filters=self.filters,  # 需要查找qdrant相关用法
+        )
+
+        node_with_scores = []
+        for node, similarity in zip(
+            query_result.nodes, query_result.similarities, strict=False
+        ):
+            node_with_scores.append(NodeWithScore(node=node, score=similarity))
+        return node_with_scores
+
+
+def tokenize_and_remove_stopwords(tokenizer, text, stopwords):
+    words = tokenizer.cut(text)
+    filtered_words = [word for word in words if word not in stopwords and word != " "]
+    return filtered_words
+
+
+# using jieba to split sentence and remove meaningless words
 class BM25Retriever(BaseRetriever):
     def __init__(
         self,
         nodes: list[BaseNode],
-        tokenizer: Callable[[str], list[str]] | None,
+        tokenizer: Callable[[str], list[str]],
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
         callback_manager: CallbackManager | None = None,
         objects: list[IndexNode] | None = None,
@@ -366,7 +426,7 @@ class BM25Retriever(BaseRetriever):
         self._corpus = [
             tokenize_and_remove_stopwords(
                 self._tokenizer,
-                get_node_content(node, self.embed_type),
+                get_node_content(node, embed_type=0),
                 stopwords=stopwords,
             )
             for node in self._nodes

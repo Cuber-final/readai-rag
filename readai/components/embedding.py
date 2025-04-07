@@ -40,7 +40,7 @@ class EmbeddingService:
                 )
         except Exception as e:
             logger.error(f"加载Embedding模型失败: {e!s}")
-            raise EmbeddingException(f"加载Embedding模型失败: {e!s}")
+            raise EmbeddingException(f"加载Embedding模型失败: {e!s}") from e
 
     def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         """获取文本的Embedding"""
@@ -52,7 +52,7 @@ class EmbeddingService:
             return embeddings
         except Exception as e:
             logger.error(f"获取Embedding失败: {e!s}")
-            raise EmbeddingException(f"获取Embedding失败: {e!s}")
+            raise EmbeddingException(f"获取Embedding失败: {e!s}") from e
 
     def get_embedding(self, text: str) -> list[float]:
         """获取单个文本的Embedding"""
@@ -60,7 +60,7 @@ class EmbeddingService:
             return self.embed_model.get_text_embedding(text)
         except Exception as e:
             logger.error(f"获取Embedding失败: {e!s}")
-            raise EmbeddingException(f"获取Embedding失败: {e!s}")
+            raise EmbeddingException(f"获取Embedding失败: {e!s}") from e
 
     def get_embedding_dimension(self) -> int:
         """获取Embedding维度"""

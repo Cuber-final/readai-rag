@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     QDRANT_URL: str = "http://localhost:6333"
     QDRANT_COLLECTION_NAME: str = "readai"
 
-    # 模型配置
+    # ollama embedding 配置
     EMBEDDING_MODEL_TYPE: Literal["huggingface", "ollama"] = "huggingface"
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-zh-v1.5"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
@@ -36,6 +36,18 @@ class Settings(BaseSettings):
     DOCUMENT_DIR: str = "./data/books"
     CHUNK_SIZE: int = 512
     CHUNK_OVERLAP: int = 50
+
+    # DEEPSEEK 配置项
+    DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY")
+    DEEPSEEK_MODEL_NAME: str = os.getenv("DEEPSEEK_MODEL_NAME")
+
+    # OPENAI 配置项
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
+    OPENAI_MODEL_NAME: str = os.getenv("OPENAI_MODEL_NAME")
+
+    # OPENAI LIKE 配置项
+    OPENAI_LIKE_API_KEY: str = os.getenv("OPENAI_LIKE_API_KEY")
+    OPENAI_LIKE_MODEL_NAME: str = os.getenv("OPENAI_LIKE_MODEL_NAME")
 
     class Config:
         env_file = ENV_FILE

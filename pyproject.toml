@@ -45,6 +45,9 @@ pypandoc = "^1.15"
 markitdown = {extras = ["pdf"], version = "^0.1.1"}
 spacy = "^3.8.5"
 llama-index-retrievers-bm25 = "^0.5.2"
+rank-bm25 = "^0.2.2"
+llama-index-embeddings-huggingface = "^0.5.2"
+jieba = "^0.42.1"
 
 [tool.poetry.extras]
 llms-openai-like = ["llama-index-llms-openai-like"]
