@@ -1,4 +1,4 @@
-DEFAULT_QA_GENERATE_PROMPT_TMPL_ZH = """\
+DEFAULT_QA_GENERATE_PROMPT_TMPL = """\
 Context information is below.
 
 ---------------------
@@ -62,4 +62,24 @@ output:
 
 ##格式要求：请参考上面的例子格式生成问题，尽量不携带数字编号并且只需要输出问题，多个问题分行输出即可
 ##输出：
+"""
+
+QA_GENERATE_EASY = """\
+You are an assistant helping users read Chinese books.
+Based on the context below, generate {num_questions_per_chunk} **easy** questions that test basic understanding or facts.
+
+Context:
+---------------------
+{context_str}
+---------------------
+
+Rules:
+- Questions must be written in **Chinese**.
+- Do not include answers or question numbers.
+- Each question must be concise (<= 20 characters).
+- Only ask about **explicit content** from the context (e.g., names, definitions, facts).
+- Avoid "这", "那", "根据" and similar vague words.
+
+Example question:
+某理论的核心概念是?
 """
