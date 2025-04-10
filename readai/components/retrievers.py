@@ -557,33 +557,3 @@ class BM25Retriever(BaseRetriever):
         nodes = self.filter(scores)
 
         return nodes
-
-
-# 自己封装一个rerank retriever
-class RerankRetriever(BaseRetriever):
-    def __init__(
-        self,
-        retrievers: list[BaseRetriever],
-        top_n: int = 3,
-        rerank_model: str = "BAAI/bge-reranker-base",
-    ):
-        self.retrievers = retrievers
-        self.top_n = top_n
-        self.rerank_model = rerank_model
-
-    async def _aretrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
-        all_nodes = []
-        for retriever in self.retrievers:
-            nodes = await retriever.aretrieve(query_bundle)
-            # 使用rerank模型对所有节点进行重排序
-            reranked_nodes = self.rerank_model.rerank(nodes, query_bundle.query_str)
-            all_nodes.extend(reranked_nodes)
-
-        return reranked_nodes[: self.top_n]
-
-    def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
-        all_nodes = []
-        for retriever in self.retrievers:
-            nodes = retriever.retrieve(query_bundle)
-            all_nodes.extend(nodes)
-        return all_nodes[: self.top_n]
