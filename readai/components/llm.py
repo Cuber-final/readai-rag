@@ -16,7 +16,7 @@ class LLMComponent:
     def __init__(self, llm_mode: LLMmode) -> None:
         match llm_mode:
             case LLMmode.DEEPSEEK:
-                from llama_index.llms.deepseek import DeepSeek  # type: ignore
+                from llama_index.llms.deepseek import DeepSeek
 
                 self.llm = DeepSeek(
                     model=settings.DEEPSEEK_MODEL_NAME,
@@ -24,7 +24,7 @@ class LLMComponent:
                 )
 
             case LLMmode.OPENAI:
-                from llama_index.llms.openai import OpenAI  # type: ignore
+                from llama_index.llms.openai import OpenAI
 
                 # openai_settings = settings.openai
                 self.llm = OpenAI(
@@ -34,7 +34,7 @@ class LLMComponent:
                 )
             case LLMmode.OPENAI_LIKE:
                 try:
-                    from llama_index.llms.openai_like import OpenAILike  # type: ignore
+                    from llama_index.llms.openai_like import OpenAILike
                 except ImportError as e:
                     raise ImportError(
                         "OpenAILike dependencies not found, install with `poetry install --extras llms-openai-like`"

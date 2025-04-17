@@ -14,7 +14,7 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from readai.components.loaders import document_loader
+from readai.components.epub2md_loader import preprocess_book
 from readai.core.config import settings
 from readai.core.schemas import (
     BookUploadResponse,
@@ -61,12 +61,12 @@ async def upload_document(
             f.write(await file.read())
 
         # 提取元数据
-        metadata = document_loader.extract_metadata(file_path)
+        metadata, cleaned_path = preprocess_book(file_path)
 
         # 保存到数据库,创建时自动生成book_id
         book = BookMetadata(
-            title=metadata.title,
-            author=metadata.author,
+            title=metadata.get("title", ""),
+            author=metadata.get("author", ""),
             file_name=save_file_name,
             file_type=get_file_type(file_ext),
             status=ChatStatus.SUCCESS,

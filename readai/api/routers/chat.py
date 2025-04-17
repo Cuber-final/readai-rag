@@ -1,33 +1,32 @@
-import asyncio
-import json
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from readai.core.schemas import ChatRequest, HttpStatus
+from readai.core.schemas import HttpStatus
 from readai.db.models import BookMetadata, ChatMessage
 from readai.db.session import get_db
-from readai.services.rag_engine import rag_engine
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
 @router.post("/conversation/{book_id}")
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+async def chat(request: Request, db: Session = Depends(get_db)):
+    # 从request中获取需要的变量
+    request_data = await request.json()
+    book_id = request_data.get("book_id")
+    message = request_data.get("message")
+    history_count = request_data.get("history_count")
+    chat_mode = request_data.get("chat_mode")  # 表示采取RAG模式还是简单LLM多轮对话
     """传递book_id,接入LLM进行聊天(流式返回)"""
     try:
         # 结合当前书本的聊天记录,作为上下文给LLM
-        chat_record = (
-            db.query(ChatMessage).filter(ChatMessage.book_id == request.book_id).all()
-        )
+        chat_record = db.query(ChatMessage).filter(ChatMessage.book_id == book_id).all()
 
         # 如果没有聊天记录,创建一个新的
         if not chat_record:
-            chat_record = ChatMessage(
-                book_id=request.book_id, role="user", content=request.message
-            )
+            chat_record = ChatMessage(book_id=book_id, role="user", content=message)
             db.add(chat_record)
             db.commit()
 
@@ -35,32 +34,31 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         history = [{"role": msg.role, "content": msg.content} for msg in chat_record]
 
         # 限制使用最近的N条历史记录
-        if request.history_count is not None and request.history_count > 0:
+        if history_count is not None and history_count > 0:
             history = (
-                history[-request.history_count * 2 :]
-                if len(history) > request.history_count * 2
+                history[-history_count * 2 :]
+                if len(history) > history_count * 2
                 else history
             )
 
         # 添加当前消息到对应book_id的历史记录
-        chat_record = ChatMessage(
-            book_id=request.book_id, role="user", content=request.message
-        )
+        chat_record = ChatMessage(book_id=book_id, role="user", content=message)
         db.add(chat_record)
         db.commit()
 
-        # 先实现非流式返回
-        # response, sources = rag_engine.chat_with_book_no_stream(
-        #     request.book_id, request.message, history, request.model_name
-        # )
-
-        # 先调用简单的llm-deepseek实现一个对话
+        response = ""
+        if chat_mode == "RAG":
+            # TODO 结合rag pipelne 返回非流式结果，以及流式方式输出
+            pass
+        else:
+            # TODO 使用 query_engine 进行多轮对话，不涉及检索召回
+            pass
 
         return {
             "code": HttpStatus.OK,
             "message": "success",
             "data": {
-                "book_id": request.book_id,
+                "book_id": book_id,
                 "content": response,
             },
         }
@@ -151,62 +149,5 @@ async def get_chat_history(
 @router.delete("/history/{book_id}")
 async def clear_chat_history(book_id: str, db: Session = Depends(get_db)):
     """清空与书籍的聊天历史"""
+    # TODO 待办
     pass
-
-
-async def generate_chat_stream(
-    book_id: str,
-    message: str,
-    history: list[dict[str, str]],
-    db: Session,
-    model_name: str | None = None,
-):
-    """生成聊天流"""
-    # SSE 格式头部
-    yield "data: " + json.dumps({"status": "started"}) + "\n\n"
-
-    try:
-        full_response = ""
-
-        # 通过RAG引擎获取响应
-        async for token in rag_engine.chat_with_book(
-            book_id, message, history, model_name
-        ):
-            full_response += token
-            yield f"data: {json.dumps({'token': token})}\n\n"
-            # 适当的延迟，模拟打字效果
-            await asyncio.sleep(0.01)
-
-        # 响应完成,新增一条对应book_id的记录到chat_messages表
-        chat_record = ChatMessage(
-            book_id=book_id, role="assistant", content=full_response
-        )
-        db.add(chat_record)
-        db.commit()
-
-        # 结束标记
-        yield "data: " + json.dumps({"status": "complete"}) + "\n\n"
-
-    except Exception as e:
-        logger.error(f"生成聊天流失败: {e!s}")
-        # 发送错误信息
-        error_message = f"错误: {e!s}"
-        yield f"data: {json.dumps({'token': error_message})}\n\n"
-        yield "data: " + json.dumps({"status": "error", "message": str(e)}) + "\n\n"
-
-        # 尝试记录错误响应
-        try:
-            chat_record = ChatMessage(
-                book_id=book_id, role="assistant", content=error_message
-            )
-            db.add(chat_record)
-            db.commit()
-        except Exception as e:
-            logger.error(f"记录错误响应失败: {e!s}")
-            return {
-                "code": HttpStatus.ERROR,
-                "message": "记录错误响应失败",
-                "data": {
-                    "error": str(e),  # 开发人员查看
-                },
-            }

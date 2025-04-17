@@ -46,6 +46,14 @@
 ### 自定义配置
 
 主要配置项在 `app/core/config.py` 中定义，可通过环境变量或 `.env` 文件覆盖默认配置。
+如果使用torch_gpu，需要修改pyproject.toml 中的torch依赖
+torch = {version = "2.6.0+cu126", source = "torch",optional = true}
+
+并在其中添加下载源
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu126"
+priority = "supplemental"
 
 ### 扩展功能
 

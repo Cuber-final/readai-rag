@@ -7,7 +7,7 @@ from loguru import logger
 logger.add("logs/node_parsers.log")
 
 
-def process_markdown_document(
+def mutil_level_markdown_splitter(
     document: LlamaIndexDocument,
     primary_headers: list[tuple[str, str]] | None = None,
     secondary_headers: list[tuple[str, str]] | None = None,
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         text=markdown_content, metadata={"author": "me", "date": "2025-01-01"}
     )
 
-    nodes = process_markdown_document(
+    nodes = mutil_level_markdown_splitter(
         document,
         min_chapter_count=8,
         max_chunk_size=1000,

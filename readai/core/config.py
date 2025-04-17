@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION_NAME: str = "readai"
 
     # ollama embedding 配置
-    EMBEDDING_MODEL_TYPE: Literal["huggingface", "ollama"] = "huggingface"
+    EMBEDDING_MODEL_TYPE: Literal["huggingface", "ollama"] = "ollama"
     EMBEDDING_MODEL_NAME: str = "BAAI/bge-large-zh-v1.5"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     LLM_MODEL_NAME: str = "deepseek-coder:7b"

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI SSE 打字机效果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #chat-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            background-color: #dcf8c6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .bot-message {
+            background-color: #f1f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        #message-input {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #send-button {
+            width: 25%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>FastAPI SSE 打字机效果演示</h1>
+    <div id="chat-container"></div>
+    <div>
+        <input type="text" id="message-input" placeholder="请输入消息...">
+        <button id="send-button">发送</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        // 添加用户消息到聊天界面
+        function addUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'user-message';
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // 添加机器人消息到聊天界面
+        function addBotMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'bot-message';
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return messageElement;
+        }
+
+        // 处理发送消息
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // 添加用户消息
+            addUserMessage(message);
+            messageInput.value = '';
+
+            // 创建一个空的机器人消息元素，后续将用于流式更新
+            const botMessageElement = addBotMessage('');
+
+            try {
+                // 使用SSE连接到服务器
+                const eventSource = new EventSource(`http://127.0.0.1:8000/stream-chat?message=${encodeURIComponent(message)}`);
+
+                // 监听消息事件
+                eventSource.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    botMessageElement.textContent = data.text;
+
+                    // 如果响应完成，关闭连接
+                    if (data.done) {
+                        eventSource.close();
+                    }
+                };
+
+                // 处理错误
+                eventSource.onerror = (error) => {
+                    console.error('EventSource failed:', error);
+                    eventSource.close();
+                    botMessageElement.textContent += ' [连接中断]';
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                botMessageElement.textContent = '发生错误，请重试。';
+            }
+        }
+
+        // 添加事件监听器
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+
+</html>
